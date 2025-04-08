@@ -1,29 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/google_map_page.dart';
-import 'pages/GPTSchedulePage.dart';
+import 'pages/calender.dart';
+import 'pages/login_page.dart';
+import 'pages/profile.dart';
+import 'pages/home.dart';
 
-void main() {
+/// ------------------------------------------------------------
+/// MAIN ENTRY POINT
+/// ------------------------------------------------------------
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://hthiasgbhpfyxgttopxg.supabase.co', // Replace with your Supabase URL
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0aGlhc2diaHBmeXhndHRvcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwOTg4OTIsImV4cCI6MjA1OTY3NDg5Mn0.WxmImvK76Qmsqgg_ylKxS8RgFWIGNb4Kq-0jpC8KRhA', // Replace with your Supabase Anon Key
+  );
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  
+/// ------------------------------------------------------------
+/// ROOT WIDGET
+///   - Checks if user is logged in
+///   - If logged in, show MainScreen
+///   - If not logged in, show LoginPage
+/// ------------------------------------------------------------
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // Track whether we have determined the initial auth state
+  bool _isLoading = true;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthState();
+  }
+
+  Future<void> _checkAuthState() async {
+    // Check if we already have a user logged in
+    final user = Supabase.instance.client.auth.currentUser;
+    setState(() {
+      _isLoggedIn = (user != null);
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UCSD',
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.blue,
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color.fromARGB(255, 2, 38, 69),
-          titleTextStyle: const TextStyle(
-            color: Color.fromARGB(255, 255, 255, 255), 
+          titleTextStyle: TextStyle(
+            color: Color.fromARGB(255, 255, 255, 255),
             fontSize: 20,
             fontWeight: FontWeight.bold,
             decoration: TextDecoration.underline,
           ),
-          iconTheme: const IconThemeData(color: Color(0xff03045E)),
+          iconTheme: IconThemeData(color: Color(0xff03045E)),
           centerTitle: true,
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -34,33 +79,49 @@ class MyApp extends StatelessWidget {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
       ),
-      home: const MainScreen(),
+      debugShowCheckedModeBanner: false,
+      // Show a loading screen while determining auth state
+      home: _isLoading
+          ? const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            )
+          : (_isLoggedIn ? const MainScreen() : const LoginPage()),
     );
   }
 }
 
+/// ------------------------------------------------------------
+/// LOGIN PAGE
+///   - Handles email/password sign in and sign up
+/// ------------------------------------------------------------
+
+/// ------------------------------------------------------------
+/// MAIN SCREEN
+///   - Displays the bottom navigation bar with pages
+///   - If user is not logged in, they will be redirected from elsewhere
+/// ------------------------------------------------------------
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-  
+  const MainScreen({Key? key}) : super(key: key);
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  
-  final List<Widget> _pages = [
-    const HomePage(),
-    const GoogleMapPage(),
-    const GptSchedulePage(),
-    const Page3(),
+
+  final List<Widget> _pages = const [
+    HomePage(),
+    GoogleMapPage(),
+    MyCalenderApp(),
+    ProfilePage(),
   ];
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 50, 
+        toolbarHeight: 50,
         title: Image.asset(
           'lib/images/ucsdLogo.png',
           height: 200,
@@ -83,19 +144,19 @@ class _MainScreenState extends State<MainScreen> {
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
-              label: "Home",
+              label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.map),
-              label: "Maps",
+              label: 'Maps',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: "Search",
+              icon: Icon(Icons.calendar_month),
+              label: 'Calender',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
-              label: "Profile",
+              label: 'Profile',
             ),
           ],
         ),
@@ -104,89 +165,3 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildContentBlock(
-            "Block 1",
-            "This is the first content block with some random text.",
-            Colors.blue[100]!,
-          ),
-          _buildContentBlock(
-            "Block 2",
-            "Second block with different content and color.",
-            Colors.green[100]!,
-          ),
-          _buildContentBlock(
-            "Block 3",
-            "Third block showing another example of content.",
-            Colors.orange[100]!,
-          ),
-          _buildContentBlock(
-            "Block 4",
-            "Final block completing our set of four content sections.",
-            Colors.purple[100]!,
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildContentBlock(String title, String content, Color color) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(content),
-        ],
-      ),
-    );
-  }
-}
-
-class Page2 extends StatelessWidget {
-  const Page2({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Search Content",
-        style: TextStyle(fontSize: 24),
-      ),
-    );
-  }
-}
-
-class Page3 extends StatelessWidget {
-  const Page3({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Profile Content",
-        style: TextStyle(fontSize: 24),
-      ),
-    );
-  }
-}
