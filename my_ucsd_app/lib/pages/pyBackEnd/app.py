@@ -1,6 +1,5 @@
 import os
 import json
-import pathlib
 import openai
 import PyPDF2
 from zoneinfo import ZoneInfo
@@ -25,22 +24,34 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Replace with your actual Google client ID and path to client secrets
 GOOGLE_CLIENT_ID = "829956076330-iuu3isoeb74m5acl22185s3m6n0ttsfh.apps.googleusercontent.com"
-client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "cs.json")
+client_secrets = {
+    "web": {
+        "client_id": os.environ["GOOGLE_CLIENT_ID"],
+        "project_id": os.environ.get("GOOGLE_PROJECT_ID", ""),
+        "auth_uri": os.environ.get("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
+        "token_uri": os.environ.get("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+        "auth_provider_x509_cert_url": os.environ.get("GOOGLE_AUTH_PROVIDER", "https://accounts.google.com"),
+        "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+        "redirect_uris": [os.environ["GOOGLE_REDIRECT_URIS"]]
+    }
+}
+
 
 # Replace with your real OpenAI API key
-openai.api_key = "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"
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
 # Set up the OAuth flow, including Calendar scope
-flow = Flow.from_client_secrets_file(
-    client_secrets_file=client_secrets_file,
+flow = Flow.from_client_config(
+    client_secrets,
     scopes=[
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
         "openid",
-        "https://www.googleapis.com/auth/calendar.events"  # for calendar insertion
+        "https://www.googleapis.com/auth/calendar.events"
     ],
-    redirect_uri="http://127.0.0.1:5000/callback"
+    redirect_uri=client_secrets["web"]["redirect_uris"][0]
 )
+
 
 # ========= DECORATOR =========
 def login_is_required(func):
