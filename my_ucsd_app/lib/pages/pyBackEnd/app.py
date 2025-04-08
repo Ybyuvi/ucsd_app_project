@@ -23,7 +23,6 @@ app.secret_key = os.urandom(24)
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Replace with your actual Google client ID and path to client secrets
-GOOGLE_CLIENT_ID = "829956076330-iuu3isoeb74m5acl22185s3m6n0ttsfh.apps.googleusercontent.com"
 client_secrets = {
     "web": {
         "client_id": os.environ["GOOGLE_CLIENT_ID"],
