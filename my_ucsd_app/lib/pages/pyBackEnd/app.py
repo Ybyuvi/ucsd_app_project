@@ -186,7 +186,7 @@ def callback():
     token_request = google.auth.transport.requests.Request(session=cached_session)
 
     id_info = id_token.verify_oauth2_token(
-        creds._id_token, token_request, GOOGLE_CLIENT_ID
+        creds._id_token, token_request, os.environ["GOOGLE_CLIENT_ID"]
     )
 
     # Store relevant data in session
