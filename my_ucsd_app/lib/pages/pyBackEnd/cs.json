@@ -1,0 +1,9 @@
+{"web":{"client_id":"829956076330-iuu3isoeb74m5acl22185s3m6n0ttsfh.apps.googleusercontent.com",
+        "project_id":"flutterapp-454806",
+        "auth_uri":"https://accounts.google.com/o/oauth2/auth",
+        "token_uri":"https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
+        "client_secret":"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",
+        "redirect_uris":["http://127.0.0.1:5000/callback"]
+    }
+}
