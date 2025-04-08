@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'UCSD Athletics',
+      title: 'UCSD',
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.blue,
         appBarTheme: AppBarTheme(
