@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 # ========= CONFIGURATION =========
 app = Flask(__name__)
+print("some")
 app.secret_key = os.urandom(24)
 
 # For local testing: allow non-HTTPS redirect
