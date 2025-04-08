@@ -1,0 +1,8 @@
+Flask
+openai
+PyPDF2
+google-auth
+google-auth-oauthlib
+google-api-python-client
+requests
+CacheControl
