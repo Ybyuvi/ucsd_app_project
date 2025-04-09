@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-void main() {
-  runApp(const MyCalenderApp());
-}
+final _secureStorage = FlutterSecureStorage();
 
 class MyCalenderApp extends StatelessWidget {
   const MyCalenderApp({super.key});
 
-  // This is the Render URL for your Flask app
   final String webAppUrl = 'https://ucsd-app-project.onrender.com';
 
   Future<void> _launchWebApp() async {
-    final url = Uri.parse(webAppUrl);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw 'Could not launch $webAppUrl';
+    final accessToken = await _secureStorage.read(key: 'googleAccessToken');
+
+    if (accessToken == null) {
+      _showMessage('Google sign-in required before launching calendar.');
+      return;
     }
+
+    final url = Uri.parse('$webAppUrl?access_token=$accessToken');
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
+  void _showMessage(String msg) {
+    // fallback message if run outside of widget context
+    print(msg);
   }
 
   @override
