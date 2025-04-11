@@ -36,7 +36,7 @@ client_secrets = {
 }
 
 # Replace with your real OpenAI API key
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = os.environ["OPENAI_API"]
 
 # Set up the OAuth flow, including Calendar scope
 flow = Flow.from_client_config(
