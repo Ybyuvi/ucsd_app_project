@@ -135,6 +135,18 @@ UPLOAD_HTML = """
             <label for="file" class="form-label">Choose PDF File</label>
             <input type="file" id="file" name="file" accept="application/pdf" required class="form-control">
           </div>
+
+          <!-- NEW date pickers -->
+          <div class="mb-3">
+            <label for="start_date" class="form-label">Quarter Start Date</label>
+            <input type="date" id="start_date" name="start_date" required class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="end_date" class="form-label">Quarter End Date</label>
+            <input type="date" id="end_date" name="end_date" required class="form-control">
+          </div>
+          <!-- END new date pickers -->
+
           <button type="submit" id="uploadBtn" class="btn btn-primary">Upload</button>
           <a href="/logout" class="btn btn-secondary ms-2">Logout</a>
         </form>
@@ -143,7 +155,7 @@ UPLOAD_HTML = """
           function showLoading() {
             const btn = document.getElementById("uploadBtn");
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>R2D2 is thinking...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Beep-beep bop, boooop! Bweee-oooh…';
           }
         </script>
       </div>
@@ -285,7 +297,20 @@ def upload():
             flash("No file selected.")
             return redirect(request.url)
 
-        # 2) Extract text from PDF
+        # 2) Capture the start/end dates
+        #    (Make sure to handle any missing form fields gracefully)
+        start_date_str = request.form.get("start_date")
+        end_date_str = request.form.get("end_date")
+
+        if not start_date_str or not end_date_str:
+            flash("Please select both a start date and an end date.")
+            return redirect(request.url)
+
+        # Store them in session
+        session["quarter_start"] = start_date_str
+        session["quarter_end"] = end_date_str
+
+        # 3) Extract text from PDF
         try:
             pdf_reader = PyPDF2.PdfReader(file)
             pdf_text = "\n".join(page.extract_text() or "" for page in pdf_reader.pages)
@@ -297,7 +322,7 @@ def upload():
             flash("PDF has no readable text.")
             return redirect(request.url)
 
-        # 3) Prompt GPT to parse schedule
+        # 4) Prompt GPT to parse schedule
         prompt = f"""
 You are an assistant that converts a PDF class schedule into an organized JSON format:
 - weeklyEvents: a list of events that repeat each week
@@ -340,14 +365,14 @@ Raw PDF text:
             flash(f"OpenAI API error: {e}")
             return redirect(request.url)
 
-        # 4) Validate the JSON
+        # 5) Validate the JSON
         try:
             schedule_json = json.loads(schedule_text)
         except json.JSONDecodeError:
             flash("GPT response is not valid JSON.")
             schedule_json = {}
 
-        # 5) Render preview page
+        # 6) Render preview page
         return render_template_string(
             PREVIEW_HTML,
             pdf_text=pdf_text,
@@ -357,23 +382,42 @@ Raw PDF text:
 
     return render_template_string(UPLOAD_HTML)
 
+
 @app.route("/import-to-calendar", methods=["POST"])
 @login_is_required
 def import_to_calendar():
-    """Take the schedule JSON and create events in the user's Google Calendar with proper timezone."""
+    """Take the schedule JSON and create events in the user's Google Calendar."""
     schedule_data = request.json or {}
     creds_data = session.get("credentials")
 
     if not creds_data:
         return {"status": "error", "message": "No credentials in session"}
 
-    # Rebuild credentials and build the Calendar service
+    # --- 1) Rebuild Google creds and service
     creds = credentials.Credentials(**creds_data)
     service = build("calendar", "v3", credentials=creds)
 
-    events_created = []
-    la_tz = ZoneInfo("America/Los_Angeles")  # Define the LA timezone
+    # --- 2) Get the user-chosen quarter start/end from session
+    start_date_str = session.get("quarter_start")  # e.g. "2025-03-31"
+    end_date_str   = session.get("quarter_end")    # e.g. "2025-06-13"
+    if not start_date_str or not end_date_str:
+        # Fallback if user didn't supply or session is empty
+        # (Use a default or return an error)
+        start_date_str = "2025-03-31"
+        end_date_str = "2025-06-13"
 
+    quarter_start = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+    quarter_end   = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+    la_tz = ZoneInfo("America/Los_Angeles")
+
+    end_dt_local = datetime.combine(quarter_end, datetime.max.time()).replace(tzinfo=la_tz)
+    end_dt_utc   = end_dt_local.astimezone(ZoneInfo("UTC"))
+    until_str    = end_dt_utc.strftime("%Y%m%dT%H%M%SZ")  # e.g. 20250613T235959Z
+
+    events_created = []
+
+    # Helper function: create and insert an event
     def create_event(title, location, start_dt, end_dt, is_weekly=False):
         print(f"Creating: {title} from {start_dt} to {end_dt}")
         event_body = {
@@ -389,15 +433,16 @@ def import_to_calendar():
             },
         }
         if is_weekly:
-            event_body["recurrence"] = ["RRULE:FREQ=WEEKLY;UNTIL=20250613T235959Z"]
+            event_body["recurrence"] = [f"RRULE:FREQ=WEEKLY;UNTIL={until_str}"]
 
-        created_event = service.events().insert(calendarId="primary", body=event_body).execute()
+        created_event = service.events().insert(
+            calendarId="primary", body=event_body
+        ).execute()
         events_created.append(created_event.get("summary", "Untitled Event"))
 
-    # Helper: convert "11:00a" or "7:00p" to a time object (naive)
+    # Helper: parse 12-hour times like "7:00p" to a time object
     def parse_12h_time(tstr):
         tstr = tstr.strip().lower().replace(" ", "")
-        # Normalize abbreviations like "11:30a" or "7:00p" to "11:30am" / "7:00pm"
         if tstr.endswith("a") or tstr.endswith("p"):
             tstr = tstr[:-1] + ("am" if tstr.endswith("a") else "pm")
         return datetime.strptime(tstr, "%I:%M%p").time()
@@ -408,31 +453,38 @@ def import_to_calendar():
         "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
     }
 
-    base_date = datetime(2025, 3, 31)  # Monday of Spring Quarter 2025
-
-    # Process Weekly Events
+    # --- 4) Process Weekly Events
     for ev in schedule_data.get("weeklyEvents", []):
         title = ev.get("title", "Untitled")
         location = ev.get("location", "")
         days = ev.get("days", [])
         try:
-            start_time = parse_12h_time(ev["startTime"])  # returns a time object
+            start_time = parse_12h_time(ev["startTime"])
             end_time = parse_12h_time(ev["endTime"])
         except Exception as e:
             print(f"Error parsing time: {e}")
             continue
 
+        # For each day in the event, figure out which date in the first week
+        # For example, if quarter_start is a Monday and the schedule says "Monday",
+        # then offset is 0. For "Wednesday", offset is 2 days, etc.
+        start_dow = quarter_start.weekday()  # Monday=0, Tuesday=1, ...
         for day in days:
             if day not in days_map:
                 continue
-            offset = (days_map[day] - base_date.weekday()) % 7
-            event_date = base_date + timedelta(days=offset)
-            # Combine the date and time, then attach the LA timezone
-            start_dt = datetime.combine(event_date.date(), start_time).replace(tzinfo=la_tz)
-            end_dt = datetime.combine(event_date.date(), end_time).replace(tzinfo=la_tz)
+
+            offset = (days_map[day] - start_dow) % 7
+            event_date = quarter_start + timedelta(days=offset)
+
+            # Combine date with time in LA
+            start_dt = datetime.combine(event_date, start_time).replace(tzinfo=la_tz)
+            end_dt   = datetime.combine(event_date, end_time).replace(tzinfo=la_tz)
+
+            # Create the weekly recurring event (until user-chosen end)
             create_event(title, location, start_dt, end_dt, is_weekly=True)
 
-    # Process Exams
+    # --- 5) Process Exams
+    # Exams typically do not recur, so we just create single events
     for exam in schedule_data.get("exams", []):
         title = f"{exam.get('title', 'Exam')} - {exam.get('type', 'Exam')}"
         location = exam.get("location", "")
@@ -441,7 +493,7 @@ def import_to_calendar():
             start_time = parse_12h_time(exam["startTime"])
             end_time = parse_12h_time(exam["endTime"])
             start_dt = datetime.combine(exam_date, start_time).replace(tzinfo=la_tz)
-            end_dt = datetime.combine(exam_date, end_time).replace(tzinfo=la_tz)
+            end_dt   = datetime.combine(exam_date, end_time).replace(tzinfo=la_tz)
             create_event(title, location, start_dt, end_dt, is_weekly=False)
         except Exception as e:
             print(f"Error processing exam: {e}")
