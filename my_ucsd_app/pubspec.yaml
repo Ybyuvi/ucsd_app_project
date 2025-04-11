@@ -66,6 +66,8 @@ flutter:
   assets:
     - lib/images/ucsdLogo.png
     - lib/images/gLogo.png
+    - lib/images/currDragon.png
+    - lib/images/destDragon.png
     - .env
 
   # The following line ensures that the Material Icons font is

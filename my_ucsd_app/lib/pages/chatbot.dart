@@ -52,7 +52,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
         },
         body: json.encode({
           "model": "gpt-3.5-turbo",
-          // Send the complete conversation, starting with your system prompt.
           "messages": _chatHistory,
           "temperature": 0.7,
         }),

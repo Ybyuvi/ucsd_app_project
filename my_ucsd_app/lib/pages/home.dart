@@ -33,12 +33,12 @@ class HomePage extends StatelessWidget {
     BlockData(
       title: 'News',
       color: Color.fromARGB(255, 63, 63, 63),
-      height: 500, // Adjust height as needed
+      height: 800,
     ),
     BlockData(
       title: 'Events',
       color: Color.fromARGB(255, 63, 63, 63),
-      height: 500, // Adjust height as needed
+      height: 800,
     ),
   ];
 
@@ -194,7 +194,6 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row: Title and a button to launch full-screen mode.
                   Row(
                     children: [
                       const Expanded(
@@ -226,7 +225,6 @@ class HomePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Embedded NewsBlock with its own scroll handling.
                   const Expanded(child: NewsBlock()),
                 ],
               ),
@@ -246,7 +244,6 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row: Title and a button to launch full-screen mode.
                   Row(
                     children: [
                       const Expanded(
@@ -278,14 +275,12 @@ class HomePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Embedded NewsBlock with its own scroll handling.
                   const Expanded(child: EventsBlock()),
                 ],
               ),
             );
           }
-
-          // Default block rendering for any other blocks.
+          
           return Container(
             height: block.height,
             margin: const EdgeInsets.only(bottom: 16),

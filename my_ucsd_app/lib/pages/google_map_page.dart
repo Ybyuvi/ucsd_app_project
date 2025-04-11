@@ -7,7 +7,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 import 'package:location/location.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:my_ucsd_app/constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GoogleMapPage extends StatefulWidget {
   const GoogleMapPage({super.key});
@@ -20,16 +20,20 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   Location _locationController = Location();
   final Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
   final TextEditingController _searchController = TextEditingController();
+  final String googleMapsApiKey = dotenv.env['GOOGLE_MAPS_KEY']!;
 
   LatLng? _currentPosition;
   LatLng? _destination;
   BitmapDescriptor? _currentLocationIcon;
+  BitmapDescriptor? _destinationIcon;
+
+  bool _followCurrentLocation = true;
 
   @override
   void initState() {
     super.initState();
     _setCustomMarkerIcon();
-    // Wait until the first frame is rendered and then delay a bit
+    _setDestinationMarkerIcon();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 500), () {
         _checkAndRequestLocationPermission();
@@ -38,9 +42,16 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   }
 
   Future<void> _setCustomMarkerIcon() async {
-    final Uint8List markerIcon = await getBytesFromAsset('assets/location_pin.png', 100);
+    final Uint8List markerIcon = await getBytesFromAsset('lib/images/currDragon.png', 200);
     setState(() {
       _currentLocationIcon = BitmapDescriptor.fromBytes(markerIcon);
+    });
+  }
+
+  Future<void> _setDestinationMarkerIcon() async {
+    final Uint8List markerIcon = await getBytesFromAsset('lib/images/destDragon.png', 150);
+    setState(() {
+      _destinationIcon = BitmapDescriptor.fromBytes(markerIcon);
     });
   }
 
@@ -58,9 +69,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         toolbarHeight: 45,
         title: const Text(
           "Maps",
-          style: TextStyle(
-            decoration: TextDecoration.none, 
-          ),
+          style: TextStyle(decoration: TextDecoration.none),
         ),
       ),
       body: Stack(
@@ -83,43 +92,37 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                     if (_destination != null)
                       Marker(
                         markerId: const MarkerId("_destinationLocation"),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                        icon: _destinationIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
                         position: _destination!,
                       ),
                   },
                 ),
-          //Search Bar
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 15,
-            right: 15,
+            top: kToolbarHeight / 2.2,
+            left: 12,
+            right: 12,
             child: Material(
-              elevation: 2,
-              borderRadius: BorderRadius.circular(10),
+              elevation: 4,
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
-                  ],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[800]!),
                 ),
                 child: GooglePlaceAutoCompleteTextField(
                   textEditingController: _searchController,
                   googleAPIKey: googleMapsApiKey,
                   inputDecoration: InputDecoration(
-                    hintText: "Search...",
-                    hintStyle: TextStyle(color: const ui.Color.fromARGB(255, 255, 255, 255)),
+                    hintText: "Search places...",
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(0),
-                      child: Icon(Icons.search, color: Colors.blue[700], size: 24),
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    prefixIcon: Icon(Icons.search, color: Colors.blue[400]),
                     filled: true,
                     fillColor: Colors.grey[900],
                   ),
-                  textStyle: const TextStyle(color: ui.Color.fromARGB(221, 255, 255, 255), fontSize: 16),
+                  textStyle: const TextStyle(color: Colors.white, fontSize: 16),
                   debounceTime: 400,
                   isLatLngRequired: true,
                   containerHorizontalPadding: 5,
@@ -131,6 +134,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         double.parse(prediction.lng ?? "0"),
                       );
                       _searchController.text = prediction.description ?? "";
+                      _followCurrentLocation = false; // disable camera jump-back
                       _cameraToPosition(_destination!);
                     });
                   },
@@ -142,11 +146,11 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                   },
                   itemBuilder: (context, index, Prediction prediction) {
                     return ListTile(
-                      leading: Icon(Icons.location_on_outlined, color: Colors.blue[700]),
+                      leading: Icon(Icons.place_outlined, color: Colors.blue[400]),
                       title: Text(prediction.description ?? "",
                           style: const TextStyle(fontSize: 16)),
                       subtitle: Text(prediction.description ?? "",
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                     );
                   },
                 ),
@@ -158,48 +162,40 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       floatingActionButton: _currentPosition != null && _destination != null
           ? FloatingActionButton.extended(
               onPressed: _openInGoogleMaps,
-              label: const Text("Open in Google Maps"),
-              icon: const Icon(Icons.directions),
-              backgroundColor: Colors.blue[700],
+              label: const Text("Open in Maps"),
+              icon: const Icon(Icons.navigation),
+              backgroundColor: Colors.blue[600],
+              elevation: 2,
             )
           : null,
     );
   }
 
-  Future<void> _cameraToPosition(LatLng pos) async {
+  Future<void> _cameraToPosition(LatLng pos, {bool animate = true}) async {
     final GoogleMapController controller = await _mapController.future;
     CameraPosition newCameraPosition = CameraPosition(target: pos, zoom: 15);
-    await controller.animateCamera(CameraUpdate.newCameraPosition(newCameraPosition));
+    if (animate) {
+      await controller.animateCamera(CameraUpdate.newCameraPosition(newCameraPosition));
+    } else {
+      await controller.moveCamera(CameraUpdate.newCameraPosition(newCameraPosition));
+    }
   }
 
   Future<void> _checkAndRequestLocationPermission() async {
-    // Check if location service is enabled
     bool serviceEnabled = await _locationController.serviceEnabled();
     if (!serviceEnabled) {
       debugPrint("Location service not enabled. Requesting...");
       serviceEnabled = await _locationController.requestService();
-      if (!serviceEnabled) {
-        debugPrint("Location service is still disabled.");
-        return;
-      }
+      if (!serviceEnabled) return;
     }
 
-    // Check permission status
     PermissionStatus permissionGranted = await _locationController.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
-      debugPrint("Location permission denied. Requesting permission...");
       permissionGranted = await _locationController.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        debugPrint("Location permission not granted.");
-        return;
-      }
+      if (permissionGranted != PermissionStatus.granted) return;
     }
-    if (permissionGranted == PermissionStatus.deniedForever) {
-      debugPrint("Location permission permanently denied. Please enable it from settings.");
-      return;
-    }
+    if (permissionGranted == PermissionStatus.deniedForever) return;
 
-    debugPrint("Location permission granted, starting location updates.");
     _startLocationUpdates();
   }
 
@@ -212,8 +208,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             currentLocation.longitude!,
           );
         });
-        _cameraToPosition(_currentPosition!);
-        debugPrint("Current location updated: $_currentPosition");
+        if (_followCurrentLocation) {
+          _cameraToPosition(_currentPosition!);
+        }
       }
     });
   }
