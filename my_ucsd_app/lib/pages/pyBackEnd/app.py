@@ -35,7 +35,6 @@ client_secrets = {
     }
 }
 
-
 # Replace with your real OpenAI API key
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -51,7 +50,6 @@ flow = Flow.from_client_config(
     redirect_uri=client_secrets["web"]["redirect_uris"][0]
 )
 
-
 # ========= DECORATOR =========
 def login_is_required(func):
     """Require a valid Google login session to access certain routes."""
@@ -63,99 +61,144 @@ def login_is_required(func):
     return wrapper
 
 # ========= HTML TEMPLATES =========
+
 INDEX_HTML = """
 <!doctype html>
-<html>
-  <head><title>PDF -> Google Calendar</title></head>
-  <body>
-    <h1>Welcome!</h1>
-    <p><a href="/login"><button>Log in with Google</button></a></p>
+<html lang="en">
+  <head>
+    <title>PDF -> Google Calendar</title>
+    <!-- Bootstrap CSS -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+      rel="stylesheet"
+    >
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <div class="text-center">
+        <h1 class="mb-4">Welcome to PDF -> Google Calendar</h1>
+        <p class="lead">Log in with your Google account to proceed.</p>
+        <a href="/login" class="btn btn-primary btn-lg">Log in with Google</a>
+      </div>
+    </div>
   </body>
 </html>
 """
 
 UPLOAD_HTML = """
 <!doctype html>
-<html>
-  <head><title>Upload PDF</title></head>
-  <body>
-    <h1>Upload Your Class Schedule PDF</h1>
-    <form method="POST" enctype="multipart/form-data">
-      <input type="file" name="file" accept="application/pdf" required>
-      <input type="submit" value="Upload">
-    </form>
-    <a href="/logout"><button>Logout</button></a>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-          <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+<html lang="en">
+  <head>
+    <title>Upload PDF</title>
+    <!-- Bootstrap CSS -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <h1 class="mb-4">Upload Your Class Schedule PDF</h1>
+      
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert alert-warning" role="alert">
+            {% for message in messages %}
+              <div>{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+      <form method="POST" enctype="multipart/form-data" class="mb-3">
+        <div class="mb-3">
+          <label for="file" class="form-label">Choose PDF File</label>
+          <input type="file" name="file" accept="application/pdf" required class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Upload</button>
+      </form>
+
+      <a href="/logout" class="btn btn-secondary">Logout</a>
+    </div>
   </body>
 </html>
 """
 
 PREVIEW_HTML = """
 <!doctype html>
-<html>
-  <head><title>Schedule Preview</title></head>
-  <body>
-    <h1>Schedule Preview</h1>
-    <h2>Extracted PDF Text</h2>
-    <pre style="background-color:#eee; padding:10px;">{{ pdf_text }}</pre>
+<html lang="en">
+  <head>
+    <title>Schedule Preview</title>
+    <!-- Bootstrap CSS -->
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+    <style>
+      pre {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <h1 class="mb-4">Schedule Preview</h1>
+      
+      <div class="mb-4">
+        <h4>Extracted PDF Text</h4>
+        <pre>{{ pdf_text }}</pre>
+      </div>
 
-    <h2>GPT Organized Schedule (JSON)</h2>
-    <pre style="background-color:#eee; padding:10px;">{{ schedule_text }}</pre>
+      <div class="mb-4">
+        <h4>GPT Organized Schedule (JSON)</h4>
+        <pre>{{ schedule_text }}</pre>
+      </div>
 
-    <h2>Import to Google Calendar</h2>
-    <p>Click this button to POST schedule data to /import-to-calendar.</p>
-    <button id="importBtn">Import to Google Calendar</button>
+      <h4 class="mb-3">Import to Google Calendar</h4>
+      <p>Click the button below to POST the schedule data to <code>/import-to-calendar</code>:</p>
+      <button id="importBtn" class="btn btn-primary btn-lg mb-4">Import to Google Calendar</button>
 
-    <script>
+      <script>
         const scheduleData = {{ schedule_json|tojson }};
-        
-        document.getElementById("importBtn").addEventListener("click", importToCalendar);
+        const importBtn = document.getElementById("importBtn");
 
-        function importToCalendar() {
-            const btn = document.getElementById("importBtn");
-            btn.disabled = true;
-            btn.textContent = "Importing...";
-            
-            console.log("Sending data:", scheduleData);
-            
-            fetch("/import-to-calendar", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(scheduleData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Response:", data);
-                alert("Successfully imported: " + (data.created || []).join(", "));
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Error importing: " + error.message);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.textContent = "Import to Google Calendar";
-            });
-        }
-    </script>
+        importBtn.addEventListener("click", function() {
+          importBtn.disabled = true;
+          importBtn.textContent = "Importing...";
 
-    <hr>
-    <a href="/logout"><button>Logout</button></a>
+          fetch("/import-to-calendar", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(scheduleData)
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert("Successfully imported: " + (data.created || []).join(", "));
+          })
+          .catch(error => {
+            console.error("Error:", error);
+            alert("Error importing: " + error.message);
+          })
+          .finally(() => {
+            importBtn.disabled = false;
+            importBtn.textContent = "Import to Google Calendar";
+          });
+        });
+      </script>
+
+      <hr>
+      <a href="/logout" class="btn btn-secondary">Logout</a>
+    </div>
   </body>
 </html>
 """
@@ -313,11 +356,11 @@ def import_to_calendar():
             "summary": title,
             "location": location,
             "start": {
-                "dateTime": start_dt.isoformat(), 
+                "dateTime": start_dt.isoformat(),
                 "timeZone": "America/Los_Angeles"
             },
             "end": {
-                "dateTime": end_dt.isoformat(), 
+                "dateTime": end_dt.isoformat(),
                 "timeZone": "America/Los_Angeles"
             },
         }
@@ -381,8 +424,6 @@ def import_to_calendar():
             continue
 
     return {"status": "success", "created": events_created}
-
-
 
 # ========= MAIN =========
 if __name__ == "__main__":
