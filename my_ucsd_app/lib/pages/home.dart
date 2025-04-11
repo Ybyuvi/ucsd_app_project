@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'weather.dart';
+import 'homeBlocks/weather.dart';
+import 'homeBlocks/news.dart';
+import 'homeBlocks/events.dart';
 
 class BlockData {
   final String title;
@@ -17,7 +19,6 @@ class BlockData {
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
-  // List of blocks you can easily edit, reorder, or expand.
   final List<BlockData> blocks = const [
     BlockData(
       title: 'Health & Well Being',
@@ -27,7 +28,17 @@ class HomePage extends StatelessWidget {
     BlockData(
       title: 'Weather',
       color: Color.fromARGB(255, 63, 63, 63),
-      height: 350,
+      height: 325,
+    ),
+    BlockData(
+      title: 'News',
+      color: Color.fromARGB(255, 63, 63, 63),
+      height: 500, // Adjust height as needed
+    ),
+    BlockData(
+      title: 'Events',
+      color: Color.fromARGB(255, 63, 63, 63),
+      height: 500, // Adjust height as needed
     ),
   ];
 
@@ -42,6 +53,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 38, 36, 36),
       appBar: AppBar(
         toolbarHeight: 45,
         title: Image.asset(
@@ -50,21 +62,24 @@ class HomePage extends StatelessWidget {
         ),
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(top: 12, left: 6, right: 6),
         itemCount: blocks.length,
         itemBuilder: (context, index) {
           final block = blocks[index];
 
+          /***************************Block1: Health & Well Being**********************************/
           if (block.title == 'Health & Well Being') {
             return Container(
               height: block.height,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.fromLTRB(1, 1, 1, 0),
               decoration: BoxDecoration(
                 color: block.color,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(4),
                 ),
               ),
               child: Column(
@@ -100,7 +115,8 @@ class HomePage extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => _openUrl('https://healthpromotion.ucsd.edu/'),
+                      onPressed: () =>
+                          _openUrl('https://healthpromotion.ucsd.edu/'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
@@ -114,7 +130,8 @@ class HomePage extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => _openUrl('https://studenthealth.ucsd.edu/'),
+                      onPressed: () =>
+                          _openUrl('https://studenthealth.ucsd.edu/'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
@@ -130,12 +147,11 @@ class HomePage extends StatelessWidget {
             );
           }
 
-/***************************Block2*******************************************/
-
+          /***************************Block2: Weather*******************************************/
           if (block.title == 'Weather') {
             return Container(
               height: block.height,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: block.color,
@@ -165,7 +181,111 @@ class HomePage extends StatelessWidget {
             );
           }
 
-          // Default block rendering for other blocks.
+          /***************************Block3: News*******************************************/
+          if (block.title == 'News') {
+            return Container(
+              height: block.height,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: block.color,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row: Title and a button to launch full-screen mode.
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
+                          child: Text(
+                            'Triton News',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.open_in_full,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FullScreenNewsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  // Embedded NewsBlock with its own scroll handling.
+                  const Expanded(child: NewsBlock()),
+                ],
+              ),
+            );
+          }
+
+          /***************************Block4: Events*******************************************/
+          if (block.title == 'Events') {
+            return Container(
+              height: block.height,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: block.color,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row: Title and a button to launch full-screen mode.
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
+                          child: Text(
+                            'Triton Events',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.open_in_full,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FullScreenEventsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  // Embedded NewsBlock with its own scroll handling.
+                  const Expanded(child: EventsBlock()),
+                ],
+              ),
+            );
+          }
+
+          // Default block rendering for any other blocks.
           return Container(
             height: block.height,
             margin: const EdgeInsets.only(bottom: 16),

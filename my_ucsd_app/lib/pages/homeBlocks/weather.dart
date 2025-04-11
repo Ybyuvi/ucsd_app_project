@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
 
 // Helper: Convert weekday number to abbreviated string.
 String getWeekdayName(int weekday) {
@@ -38,8 +40,7 @@ List<dynamic> reorderForecast(List<dynamic> forecastList) {
 }
 
 class WeatherWidget extends StatefulWidget {
-  final String city;
-  const WeatherWidget({Key? key, this.city = "San Diego"}) : super(key: key);
+  const WeatherWidget({Key? key}) : super(key: key);
 
   @override
   State<WeatherWidget> createState() => _WeatherWidgetState();
@@ -50,7 +51,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   List<dynamic>? forecast;
   bool isLoading = true;
 
-  final String apiKey = "3b95c186c70a4aedaf680043251104"; 
+  final String apiKey = "3b95c186c70a4aedaf680043251104";
 
   @override
   void initState() {
@@ -59,9 +60,11 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Future<void> fetchWeather() async {
-    // Request forecast for 7 days so we have enough days.
+    // Use hardcoded coordinates for La Jolla (UCSD)
+    final String queryLocation = "iata:SAN";
+
     final url = Uri.parse(
-        "https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=${widget.city}&days=7&aqi=yes&alerts=no");
+        "https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$queryLocation&days=7&aqi=yes&alerts=no");
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
@@ -85,9 +88,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       return const Text('Failed to load weather');
     }
 
-    // Current weather container (top part)
     Widget currentContainer = Container(
-      margin: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.only(top: 1),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 80, 80, 80),
@@ -104,8 +106,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "${widget.city}: ${currentWeather!['temp_f']}°F",
-                style: const TextStyle(
+                "La Jolla: ${currentWeather!['temp_f']}°F ",
+                style: TextStyle(
                   fontSize: 16,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -116,7 +118,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                 style: const TextStyle(fontSize: 14, color: Colors.white70),
               ),
               Text(
-                "UV Index: ${currentWeather!['uv']}",
+                "UV: ${currentWeather!['uv']}",
                 style: const TextStyle(fontSize: 14, color: Colors.white),
               ),
             ],
@@ -125,43 +127,46 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       ),
     );
 
-    // Reorder forecast data to start from Monday.
     List<dynamic> orderedForecast = reorderForecast(forecast!);
 
-    // Build forecast row with one column per day.
     Widget forecastRow = Row(
       children: orderedForecast.map((dayForecast) {
-        DateTime date = DateTime.parse(dayForecast['date']);
-        String weekday = getWeekdayName(date.weekday);
-        String maxTemp = "${dayForecast['day']['maxtemp_f']}°";
-        String minTemp = "${dayForecast['day']['mintemp_f']}°";
-        String iconUrl = "https:${dayForecast['day']['condition']['icon']}";
-        return Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(weekday,
-                    style: const TextStyle(fontSize: 16, color: Colors.white)),
-                const SizedBox(height: 4),
-                Image.network(iconUrl, width: 36, height: 36),
-                const SizedBox(height: 4),
-                Text(maxTemp,
-                    style: const TextStyle(fontSize: 14, color: Colors.white)),
-                Text(minTemp,
-                    style: const TextStyle(fontSize: 14, color: Colors.white)),
-              ],
-            ),
+      DateTime date = DateTime.parse(dayForecast['date']);
+      String dateStr = DateFormat('MMM d').format(date);
+      String weekday = getWeekdayName(date.weekday);
+      String maxTemp = "${dayForecast['day']['maxtemp_f']}°";
+      String minTemp = "${dayForecast['day']['mintemp_f']}°";
+      String iconUrl = "https:${dayForecast['day']['condition']['icon']}";
+      return Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
           ),
-        );
-      }).toList(),
-    );
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(dateStr,
+                  style: const TextStyle(fontSize: 13, color: Colors.white70)),
+              const SizedBox(height: 2),
+              Text(weekday,
+                  style: const TextStyle(fontSize: 16, color: Colors.white)),
+              const SizedBox(height: 4),
+              Image.network(iconUrl, width: 36, height: 36),
+              const SizedBox(height: 4),
+              Text(maxTemp,
+                  style: const TextStyle(fontSize: 14, color: Colors.white)),
+              Text(minTemp,
+                  style: const TextStyle(fontSize: 14, color: Colors.white)),
+            ],
+          ),
+        ),
+      );
+    }).toList(),
+  );
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

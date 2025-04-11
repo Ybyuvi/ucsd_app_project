@@ -44,6 +44,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   table_calendar: ^3.0.9
   webview_flutter: ^4.10.0
+  flutter_dotenv: ^5.2.1
 
 
 dev_dependencies:
@@ -65,6 +66,7 @@ flutter:
   assets:
     - lib/images/ucsdLogo.png
     - lib/images/gLogo.png
+    - .env
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

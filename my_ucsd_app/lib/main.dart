@@ -5,13 +5,16 @@ import 'pages/calender.dart';
 import 'pages/login_page.dart';
 import 'pages/profile.dart';
 import 'pages/home.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'pages/chatbot.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// ------------------------------------------------------------
 /// MAIN ENTRY POINT
 /// ------------------------------------------------------------
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env"); 
 
   // Initialize Supabase
   await Supabase.initialize(
@@ -115,6 +118,7 @@ class _MainScreenState extends State<MainScreen> {
     HomePage(),
     GoogleMapPage(),
     MyCalendarPage(),
+    ChatbotPage(),
     ProfilePage(),
   ];
 
@@ -147,6 +151,10 @@ class _MainScreenState extends State<MainScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month),
               label: 'Calender',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.smart_toy),
+              label: 'TritonAI',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),

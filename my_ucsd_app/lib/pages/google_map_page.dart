@@ -113,7 +113,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.all(15),
+                      padding: const EdgeInsets.all(0),
                       child: Icon(Icons.search, color: Colors.blue[700], size: 24),
                     ),
                     filled: true,
