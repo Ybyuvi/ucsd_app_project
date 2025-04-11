@@ -1,5 +1,5 @@
 Flask
-gunicorn app:app --timeout 150
+gunicorn
 openai==0.28
 PyPDF2
 google-auth
