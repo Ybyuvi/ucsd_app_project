@@ -54,6 +54,15 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 45,
+        title: const Text(
+          "Maps",
+          style: TextStyle(
+            decoration: TextDecoration.none, 
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           _currentPosition == null

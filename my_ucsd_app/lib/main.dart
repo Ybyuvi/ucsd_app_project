@@ -15,7 +15,7 @@ Future<void> main() async {
 
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://hthiasgbhpfyxgttopxg.supabase.co', // Replace with your Supabase URL
+    url: 'https://hthiasgbhpfyxgttopxg.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0aGlhc2diaHBmeXhndHRvcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwOTg4OTIsImV4cCI6MjA1OTY3NDg5Mn0.WxmImvK76Qmsqgg_ylKxS8RgFWIGNb4Kq-0jpC8KRhA', // Replace with your Supabase Anon Key
   );
 
@@ -114,20 +114,13 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = const [
     HomePage(),
     GoogleMapPage(),
-    MyCalenderApp(),
+    MyCalendarPage(),
     ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 50,
-        title: Image.asset(
-          'lib/images/ucsdLogo.png',
-          height: 200,
-        ),
-      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(

@@ -19,10 +19,9 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# For local testing: allow non-HTTPS redirect
+
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-# Replace with your actual Google client ID and path to client secrets
 client_secrets = {
     "web": {
         "client_id": os.environ["GOOGLE_CLIENT_ID"],
@@ -35,10 +34,10 @@ client_secrets = {
     }
 }
 
-# Replace with your real OpenAI API key
+
 openai.api_key = os.environ["OPENAI_API"]
 
-# Set up the OAuth flow, including Calendar scope
+
 flow = Flow.from_client_config(
     client_secrets,
     scopes=[
@@ -252,14 +251,13 @@ def login():
 
 @app.route("/callback")
 def callback():
-    # Finish the OAuth handshake
+
     flow.fetch_token(authorization_response=request.url)
 
     if session.get("state") != request.args.get("state"):
-        return abort(500)  # State mismatch
+        return abort(500)  
 
     creds = flow.credentials
-    # Validate token
     request_session = requests.session()
     cached_session = cachecontrol.CacheControl(request_session)
     token_request = google.auth.transport.requests.Request(session=cached_session)
@@ -398,11 +396,9 @@ def import_to_calendar():
     service = build("calendar", "v3", credentials=creds)
 
     # --- 2) Get the user-chosen quarter start/end from session
-    start_date_str = session.get("quarter_start")  # e.g. "2025-03-31"
-    end_date_str   = session.get("quarter_end")    # e.g. "2025-06-13"
+    start_date_str = session.get("quarter_start") 
+    end_date_str   = session.get("quarter_end")  
     if not start_date_str or not end_date_str:
-        # Fallback if user didn't supply or session is empty
-        # (Use a default or return an error)
         start_date_str = "2025-03-31"
         end_date_str = "2025-06-13"
 
@@ -468,7 +464,7 @@ def import_to_calendar():
         # For each day in the event, figure out which date in the first week
         # For example, if quarter_start is a Monday and the schedule says "Monday",
         # then offset is 0. For "Wednesday", offset is 2 days, etc.
-        start_dow = quarter_start.weekday()  # Monday=0, Tuesday=1, ...
+        start_dow = quarter_start.weekday()  
         for day in days:
             if day not in days_map:
                 continue

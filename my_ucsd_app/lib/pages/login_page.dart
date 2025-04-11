@@ -14,7 +14,6 @@ class LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Replace with your actual Google OAuth client IDs
   static const iosClientId = '829956076330-0i20894pmbdrr8844k7g9ehds86rll34.apps.googleusercontent.com';
   static const webClientId = '829956076330-iuu3isoeb74m5acl22185s3m6n0ttsfh.apps.googleusercontent.com';
 
@@ -25,7 +24,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: Colors.transparent,
     appBar: AppBar(
-      title: const Text('Login'),
+      title: const Text(' '),
       centerTitle: true,
       backgroundColor: const Color(0xFF1F1F1F),
     ),
@@ -51,7 +50,7 @@ Widget build(BuildContext context) {
                     ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: screenHeight * 0.03), // 3% of screen height
+              SizedBox(height: screenHeight * 0.03), 
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(24),
