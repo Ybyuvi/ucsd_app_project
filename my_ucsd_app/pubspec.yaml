@@ -45,6 +45,7 @@ dependencies:
   table_calendar: ^3.0.9
   webview_flutter: ^4.10.0
   flutter_dotenv: ^5.2.1
+  confetti: ^0.7.0
 
 
 dev_dependencies:
